@@ -1,0 +1,11 @@
+﻿@model ApiGateway.Models.UserCreateModel
+
+@{
+    ViewBag.Title = "Admin";
+}
+
+<h2>Welcome admin</h2>
+
+<a asp-controller="Admin" asp-action="CreateUser" class="btn btn-primary">Create User</a>
+
+<a asp-controller="Admin" asp-action="UserList" class="btn btn-primary">User List</a>

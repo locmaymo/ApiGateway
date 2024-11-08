@@ -1,0 +1,71 @@
+﻿version: '3.8'
+
+services:
+  # MongoDB service
+  mongodb:
+    image: mongo
+    restart: always
+    container_name: mongodb
+    environment:
+      MONGO_INITDB_DATABASE: ApiGatewayDb
+    ports:
+      - "27017:27017"
+    volumes:
+      - ./data/mongo:/data/db
+
+  # Redis service
+  redis:
+    image: redis:alpine
+    container_name: redis
+    ports:
+      - "6379:6379"
+
+  # RabbitMQ service (với giao diện quản trị)
+  rabbitmq:
+    image: rabbitmq:3-management
+    container_name: rabbitmq
+    ports:
+      - "5672:5672"  # Cổng RabbitMQ
+      - "15672:15672" # RabbitMQ Web UI
+
+  # Elasticsearch service
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:7.10.1
+    container_name: elasticsearch
+    environment:
+      - discovery.type=single-node
+      - ES_JAVA_OPTS=-Xms512m -Xmx512m
+    ports:
+      - "9200:9200"
+      - "9300:9300"
+    volumes:
+      - esdata:/usr/share/elasticsearch/data
+
+  # Kibana service
+  kibana:
+    image: docker.elastic.co/kibana/kibana:7.10.1
+    container_name: kibana
+    ports:
+      - "5601:5601"
+    depends_on:
+      - elasticsearch
+
+  # API Gateway service
+  apigateway:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: apigateway
+    depends_on:
+      - mongodb
+      - redis
+      - rabbitmq
+      - elasticsearch
+    ports:
+      - "8080:80"  # Cấu hình cho API
+    environment:
+      - MongoDbSettings__ConnectionString=mongodb://mongodb:27017
+      - MongoDbSettings__DatabaseName=ApiGatewayDb
+
+volumes:
+  esdata:
