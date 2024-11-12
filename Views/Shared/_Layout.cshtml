@@ -4,12 +4,14 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>@ViewData["Title"] - GateWay</title>
-    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="~/sbAdmin/vendor/fontawesome-free/css/all.min.css" />
+    <link rel="stylesheet" href="~/sbAdmin/css/sb-admin-2.min.css" />
+    <link rel="stylesheet" href="~/sbAdmin/vendor/datatables/dataTables.bootstrap4.min.css" />
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/GateWay.styles.css" asp-append-version="true" />
 </head>
 <body>
-    <header>
+    @* <header>
         <nav class="navbar navbar-expand-sm navbar-toggleable-sm navbar-light bg-white border-bottom box-shadow mb-3">
             <div class="container-fluid">
                 <a class="navbar-brand" asp-area="" asp-controller="Home" asp-action="Index">GateWay</a>
@@ -37,20 +39,41 @@
                 </div>
             </div>
         </nav>
-    </header>
-    <div class="container">
-        <main role="main" class="pb-3">
-            @RenderBody()
-        </main>
+    </header> *@
+    <div id="wrapper">
+
+        <!-- Include Sidebar -->
+        @Html.Partial("_Sidebar")
+
+        <!-- Content Wrapper -->
+        <div id="content-wrapper" class="d-flex flex-column">
+            <!-- Main Content -->
+            <div id="content">
+
+                <!-- Include Topbar -->
+                @Html.Partial("_Topbar")
+
+                <!-- Page Content -->
+                <div class="container-fluid">
+                    @RenderBody()
+                </div>
+
+            </div>
+
+            <!-- Include Footer -->
+            @Html.Partial("_Footer")
+        </div>
     </div>
 
-    <footer class="border-top footer text-muted">
-        <div class="container">
-            &copy; 2024 - GateWay - <a asp-area="" asp-controller="Home" asp-action="Privacy">Privacy</a>
-        </div>
-    </footer>
-    <script src="~/lib/jquery/dist/jquery.min.js"></script>
-    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="~/sbAdmin/vendor/jquery/jquery.min.js"></script>
+    <script src="~/sbAdmin/vendor/bootstrap/js/bootstrap.bundle.min.js"></script>
+    <script src="~/sbAdmin/vendor/jquery-easing/jquery.easing.min.js"></script>
+    <script src="~/sbAdmin/js/sb-admin-2.min.js"></script>
+    <script src="~/sbAdmin/vendor/chart.js/Chart.min.js"></script>
+    <script src="~/sbAdmin/js/demo/chart-area-demo.js"></script>
+    <script src="~/sbAdmin/js/demo/chart-pie-demo.js"></script>
+    <script src="~/sbAdmin/vendor/datatables/jquery.dataTables.min.js"></script>
+    <script src="~/sbAdmin/vendor/datatables/dataTables.bootstrap4.min.js"></script>
     <script src="~/js/site.js" asp-append-version="true"></script>
     @await RenderSectionAsync("Scripts", required: false)
 </body>

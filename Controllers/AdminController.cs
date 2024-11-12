@@ -88,12 +88,22 @@ namespace ApiGateway.Controllers
 
             var model = new AdminEditUserModel
             {
-                Id = user.Id,
                 Name = user.Name,
                 Username = user.Username,
                 Email = user.Email,
-                Role = user.Role
+                //Role = user.Role
             };
+
+            // Kiểm tra nếu cấu hình SMTP đã tồn tại
+            if (user.SmtpConfig != null)
+            {
+                model.SmtpHost = user.SmtpConfig.Host;
+                model.SmtpPort = user.SmtpConfig.Port;
+                model.SmtpUsername = user.SmtpConfig.Username;
+                model.SmtpPassword = user.SmtpConfig.Password; // Chú ý không hiển thị mật khẩu nếu không cần thiết
+                model.SmtpUseSSL = user.SmtpConfig.UseSSL;
+                model.SmtpUseTLS = user.SmtpConfig.UseTLS;
+            }
 
             return View(model);
         }
@@ -118,7 +128,7 @@ namespace ApiGateway.Controllers
             user.Username = model.Username;
             user.Name = model.Name;
             user.Email = model.Email;
-            user.Role = model.Role;
+            //user.Role = model.Role;
 
             // Update password if provided
             if (!string.IsNullOrEmpty(model.Password))
@@ -126,6 +136,20 @@ namespace ApiGateway.Controllers
                 var salt = PasswordHelper.GenerateSalt();
                 user.PasswordHash = PasswordHelper.HashPasswordWithSalt(model.Password, salt);
                 user.PasswordSalt = salt;
+            }
+
+            // Update SMTP Config
+            if (!string.IsNullOrEmpty(model.SmtpHost) && model.SmtpPort.HasValue)
+            {
+                user.SmtpConfig = new SmtpConfiguration
+                {
+                    Host = model.SmtpHost,
+                    Port = model.SmtpPort.Value,
+                    Username = model.SmtpUsername,
+                    Password = model.SmtpPassword, // Lưu mật khẩu - mã hóa nếu cần
+                    UseSSL = model.SmtpUseSSL,
+                    UseTLS = model.SmtpUseTLS
+                };
             }
 
             await _userService.UpdateUserAsync(user);

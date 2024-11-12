@@ -14,10 +14,12 @@ namespace ApiGateway.Controllers
     public class AccountController : Controller
     {
         private readonly UserService _userService;
+        private readonly ApiKeyService _apiKeyService;
 
-        public AccountController(UserService userService)
+        public AccountController(UserService userService, ApiKeyService apiKeyService)
         {
             _userService = userService;
+            _apiKeyService = apiKeyService;
         }
 
         // GET: /Account/Login
@@ -145,6 +147,53 @@ namespace ApiGateway.Controllers
         public IActionResult AccessDenied()
         {
             return View();
+        }
+
+        // GET: /Account/ApiKey
+        [Authorize]
+        [HttpGet]
+        public async Task<IActionResult> ApiKey()
+        {
+            // Get the current user
+            var username = User.Identity.Name;
+            var user = await _userService.GetUserByUsernameAsync(username);
+
+            if (user == null)
+            {
+                return RedirectToAction("Login");
+            }
+
+            // Only show the last 4 characters of the API key for security
+            string maskedApiKey = !string.IsNullOrEmpty(user.ApiKey)
+                ? "************" + user.ApiKey.Substring(user.ApiKey.Length - 4)
+                : "No API Key Generated";
+
+            ViewBag.ApiKey = maskedApiKey;
+
+            return View();
+        }
+
+        // POST: /Account/GenerateApiKey
+        [Authorize]
+        [HttpPost]
+        public async Task<IActionResult> GenerateApiKey()
+        {
+            // Get the current user
+            var username = User.Identity.Name;
+            var user = await _userService.GetUserByUsernameAsync(username);
+
+            if (user == null)
+            {
+                return RedirectToAction("Login");
+            }
+
+            // Generate a new API key
+            var apiKey = await _apiKeyService.GenerateApiKeyAsync(user.Id);
+
+            // Optionally, display the full API key to the user once
+            ViewBag.ApiKey = apiKey; // Be cautious displaying the full key
+
+            return View("ApiKey");
         }
     }
 }

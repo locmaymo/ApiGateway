@@ -3,8 +3,10 @@ using ApiGateway.Models;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.Extensions.Options;
 using MongoDB.Driver;
+using ApiGateway.Middleware;
 
 var builder = WebApplication.CreateBuilder(args);
+
 
 
 // Đọc cài đặt MongoDB từ appsettings.json
@@ -17,8 +19,18 @@ builder.Services.AddSingleton<IMongoClient>(s =>
     return new MongoClient(settings.ConnectionString);
 });
 
+// Load RabbitMQ settings from configuration
+builder.Services.Configure<RabbitMQSettings>(builder.Configuration.GetSection("RabbitMQSettings"));
+
+// Register the RabbitMQPublisherService
+builder.Services.AddSingleton<RabbitMQPublisherService>();
+
 // ...
 builder.Services.AddScoped<UserService>();
+
+builder.Services.AddScoped<ApiKeyService>();
+
+builder.Services.AddScoped<ReportService>();
 
 // Configure Cookie Authentication
 builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
@@ -69,6 +81,9 @@ else
 app.UseStaticFiles();
 
 app.UseRouting();
+
+// Add the API Key Authentication Middleware
+app.UseMiddleware<ApiKeyAuthenticationMiddleware>();
 
 // Use authentication and authorization
 app.UseAuthentication();

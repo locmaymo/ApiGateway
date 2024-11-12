@@ -1,0 +1,14 @@
+﻿@{
+    ViewBag.Title = "Your API Key";
+}
+
+<h2>Your API Key</h2>
+
+<p>Your API Key: @ViewBag.ApiKey</p>
+
+<form asp-action="GenerateApiKey" method="post">
+    <button type="submit" class="btn btn-primary">Generate New API Key</button>
+</form>
+
+<p>Vui Lòng Lưu Lại API key của bạn</p>
+<p>Note: Generating a new API key will invalidate the previous one.</p>

@@ -21,6 +21,19 @@ namespace ApiGateway.Models
 
         public string Role { get; set; } = default!;
 
-        public List<string> RefreshTokens { get; set; } = new List<string>();
+        public string ApiKey { get; set; } = default!;
+
+        // Cấu hình SMTP (ban đầu có thể null/ trống)
+        public SmtpConfiguration? SmtpConfig { get; set; } = default!;
+    }
+
+    public class SmtpConfiguration
+    {
+        public string Host { get; set; }
+        public int Port { get; set; }
+        public string Username { get; set; }
+        public string Password { get; set; }
+        public bool UseSSL { get; set; }
+        public bool UseTLS { get; set; }
     }
 }

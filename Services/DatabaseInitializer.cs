@@ -41,7 +41,8 @@ namespace ApiGateway.Services
                     Email = "admin@yourdomain.com",
                     PasswordHash = passwordHash,  // Lưu hash của mật khẩu
                     PasswordSalt = salt,          // Lưu salt vừa sinh ra
-                    Role = "Admin"
+                    Role = "Admin",
+                    SmtpConfig = null
                 };
 
                 // Lưu người dùng admin vào collection
