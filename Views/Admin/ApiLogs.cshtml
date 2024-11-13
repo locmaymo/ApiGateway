@@ -1,0 +1,93 @@
+﻿<h1 class="text-center">API Logs</h1>
+
+<div class="card shadow mb-4">
+    <div class="card-header py-3">
+        <h6 class="m-0 font-weight-bold text-primary">Quản Lý Logs</h6>
+    </div>
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-bordered table-striped">
+                <thead>
+                    <tr>
+                        <th>Thời gian</th>
+                        <th>Phương thức</th>
+                        <th>Endpoint</th>
+                        <th>Status</th>
+                        <th>Chi tiết</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <!-- Dữ liệu log sẽ được chèn vào đây -->
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Modal -->
+<div class="modal fade" id="detailModal" tabindex="-1" role="dialog" aria-labelledby="detailModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Chi tiết Log</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Đóng">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <!-- Thay đổi từ <pre> sang <div> -->
+                <div id="logDetail"></div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Đóng</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        // Lấy dữ liệu log từ API và hiển thị lên bảng
+        $(document).ready(function () {
+            $.ajax({
+                url: 'http://localhost:5178/api/apilog', // Thay {port} bằng số cổng của backend
+                method: 'GET',
+                success: function (data) {
+                    var tbody = $('table tbody');
+                    data.forEach(function (log) {
+                        var row = '<tr>'
+                            + '<td>' + log.timestamp + '</td>'
+                            + '<td>' + log.method + '</td>'
+                            + '<td>' + log.endpoint + '</td>'
+                            + '<td>' + log.statusCode + '</td>'
+                            + '<td><button class="btn btn-info btn-sm" data-toggle="modal" data-target="#detailModal" data-log=\'' + JSON.stringify(log) + '\'>Xem</button></td>'
+                            + '</tr>';
+                        tbody.append(row);
+                    });
+                },
+                error: function (err) {
+                    console.error(err);
+                }
+            });
+        });
+
+        // Xử lý sự kiện hiển thị modal chi tiết log
+        $('#detailModal').on('show.bs.modal', function (event) {
+            var button = $(event.relatedTarget);
+            var log = JSON.parse(button.attr('data-log'));
+            var modal = $(this);
+
+            // Sử dụng json-viewer để hiển thị JSON
+            var requestJson = log.request ? log.request : {};
+            var responseJson = log.response ? log.response : {};
+
+            var detailHtml = '<h5>Request</h5><div id="requestJson"></div>';
+            detailHtml += '<h5>Response</h5><div id="responseJson"></div>';
+            modal.find('#logDetail').html(detailHtml);
+
+            // Hiển thị JSON trong các div
+            $('#requestJson').jsonViewer(requestJson, { collapsed: false, withQuotes: true });
+            $('#responseJson').jsonViewer(responseJson, { collapsed: false, withQuotes: true });
+        });
+    </script>
+}

@@ -9,41 +9,13 @@
     <link rel="stylesheet" href="~/sbAdmin/vendor/datatables/dataTables.bootstrap4.min.css" />
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/GateWay.styles.css" asp-append-version="true" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/jquery.json-viewer/json-viewer/jquery.json-viewer.css">
 </head>
 <body>
-    @* <header>
-        <nav class="navbar navbar-expand-sm navbar-toggleable-sm navbar-light bg-white border-bottom box-shadow mb-3">
-            <div class="container-fluid">
-                <a class="navbar-brand" asp-area="" asp-controller="Home" asp-action="Index">GateWay</a>
-                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target=".navbar-collapse" aria-controls="navbarSupportedContent"
-                        aria-expanded="false" aria-label="Toggle navigation">
-                    <span class="navbar-toggler-icon"></span>
-                </button>
-                <div class="navbar-collapse collapse d-sm-inline-flex justify-content-between">
-                    <ul class="navbar-nav flex-grow-1">
-                        <li class="nav-item">
-                            <a class="nav-link text-dark" asp-area="" asp-controller="Home" asp-action="Index">Home</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link text-dark" asp-area="" asp-controller="Home" asp-action="Settings">Cài đặt</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link text-dark" asp-area="" asp-controller="Home" asp-action="Admin">Admin</a>
-                        </li>
-                        <li class="nav-item">
-                            <form method="post" asp-area="" asp-controller="Account" asp-action="Logout" class="form-inline">
-                                <button type="submit" class="nav-link btn btn-link text-dark">Logout</button>
-                            </form>
-                        </li>
-                    </ul>
-                </div>
-            </div>
-        </nav>
-    </header> *@
     <div id="wrapper">
 
         <!-- Include Sidebar -->
-        @Html.Partial("_Sidebar")
+        @await Html.PartialAsync("_Sidebar")
 
         <!-- Content Wrapper -->
         <div id="content-wrapper" class="d-flex flex-column">
@@ -51,7 +23,8 @@
             <div id="content">
 
                 <!-- Include Topbar -->
-                @Html.Partial("_Topbar")
+                  @await Html.PartialAsync("_Topbar")
+
 
                 <!-- Page Content -->
                 <div class="container-fluid">
@@ -61,19 +34,20 @@
             </div>
 
             <!-- Include Footer -->
-            @Html.Partial("_Footer")
+            @await Html.PartialAsync("_Footer")
         </div>
     </div>
 
     <script src="~/sbAdmin/vendor/jquery/jquery.min.js"></script>
-    <script src="~/sbAdmin/vendor/bootstrap/js/bootstrap.bundle.min.js"></script>
     <script src="~/sbAdmin/vendor/jquery-easing/jquery.easing.min.js"></script>
+    <script src="~/sbAdmin/vendor/bootstrap/js/bootstrap.bundle.min.js"></script>
     <script src="~/sbAdmin/js/sb-admin-2.min.js"></script>
     <script src="~/sbAdmin/vendor/chart.js/Chart.min.js"></script>
     <script src="~/sbAdmin/js/demo/chart-area-demo.js"></script>
     <script src="~/sbAdmin/js/demo/chart-pie-demo.js"></script>
     <script src="~/sbAdmin/vendor/datatables/jquery.dataTables.min.js"></script>
     <script src="~/sbAdmin/vendor/datatables/dataTables.bootstrap4.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/jquery.json-viewer/json-viewer/jquery.json-viewer.js"></script>
     <script src="~/js/site.js" asp-append-version="true"></script>
     @await RenderSectionAsync("Scripts", required: false)
 </body>

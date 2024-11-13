@@ -157,6 +157,14 @@ namespace ApiGateway.Controllers
             return RedirectToAction("UserList");
         }
 
+        // GET: /Admin/ApiLogs
+        [HttpGet]
+        public IActionResult ApiLogs()
+        {
+            // Hiển thị danh sách logs API
+            return View();
+        }
+
 
         // Các action khác như UserList, EditUser, DeleteUser v.v.
     }
