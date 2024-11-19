@@ -1,19 +1,73 @@
-﻿<h1 class="text-center">API Logs</h1>
+﻿@{
+    ViewData["Title"] = "Logs";
+}
 
 <div class="card shadow mb-4">
     <div class="card-header py-3">
-        <h6 class="m-0 font-weight-bold text-primary">Quản Lý Logs</h6>
+        <form id="searchForm">
+            <div class="row d-flex justify-content-between">
+                <div class="col-md-6">
+                    @* Bộ lọc *@
+                    <div class="col-md-auto">
+                        <button type="button" id="add-filter-btn" class="btn btn-primary btn-sm">
+                            <i class="fa fa-plus"></i> Thêm Bộ Lọc
+                        </button>
+                    </div>
+
+                    <!-- Hiển thị các bộ lọc đang áp dụng -->
+                    <div class="col-md-auto" id="active-filters">
+                        <!-- Các tag bộ lọc sẽ được chèn vào đây -->
+                    </div>
+                </div>
+
+                <div class="col-md-6">
+                    <div class="form-row align-items-end justify-content-end">
+
+                        @* Ô tìm kiếm *@
+                        <div class="col-md-4">
+                            <label>Từ khóa</label>
+                            <input type="text" class="form-control" name="SearchTerm" placeholder="Tìm kiếm theo từ khóa" />
+                        </div>
+
+                        @* Ô chọn size *@
+                        <div class="col-md-2">
+                            <label>Số bản ghi</label>
+                            <input type="number" class="form-control" name="size" id="size" min="1" value="100" />
+                        </div>
+
+                        @* Ô chọn polling rate *@
+                        <div class="col-md-2">
+                            <label>Rate (giây)</label>
+                            <input type="number" class="form-control" id="pollingRateInput" min="1" value="1" />
+                        </div>
+
+                        <div class="d-grid gap-2 d-md-block">
+                            <button type="button" id="searchButton" class="btn btn-primary">
+                                <i class="fas fa-search"></i> Tìm Kiếm
+                            </button>
+                            <button type="button" id="togglePollingButton" class="btn btn-danger">
+                                <i class="fas fa-pause"></i> Pause
+                            </button>
+                        </div>
+                        
+
+                    </div>
+                </div>
+            </div>
+        </form>
+        
     </div>
     <div class="card-body">
         <div class="table-responsive">
-            <table class="table table-bordered table-striped">
+            <table class="table table-bordered table-striped" id="logsTable">
                 <thead>
                     <tr>
-                        <th>Thời gian</th>
-                        <th>Phương thức</th>
-                        <th>Endpoint</th>
-                        <th>Status</th>
-                        <th>Chi tiết</th>
+                        <th>Time Stamp</th>
+                        <th>Level</th>
+                        <th>Method</th>
+                        <th>RequestPath</th>
+                        <th>Code</th>
+                        <th>Message</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -24,8 +78,61 @@
     </div>
 </div>
 
-<!-- Modal -->
-<div class="modal fade" id="detailModal" tabindex="-1" role="dialog" aria-labelledby="detailModalLabel" aria-hidden="true">
+<!-- Modal thêm/chỉnh sửa bộ lọc -->
+<div class="modal fade" id="filterModal" tabindex="-1" role="dialog" aria-labelledby="filterModalLabel">
+    <div class="modal-dialog modal-dialog-centered filter-modal modal-lg" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5>Thêm Bộ Lọc</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Đóng">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <!-- Nội dung của modal thêm bộ lọc -->
+                <div class="form-row">
+                    <div class="form-group col-md-3">
+                        <label>Trường</label>
+                        <select id="field-input" class="form-control" style="width: 100%">
+                            <!-- Các trường có thể lọc -->
+                            <option value="level">level</option>
+                            <option value="message">message</option>
+                            <option value="fields.statusCode">fields.statusCode</option>
+                            <option value="fields.Method">fields.Method</option>
+                            <option value="fields.RequestPath">fields.RequestPath</option>
+                            <!-- Thêm các trường khác nếu cần -->
+                        </select>
+                    </div>
+                    <div class="form-group col-md-2">
+                        <label>Toán tử</label>
+                        <select id="operator-select" class="form-control">
+                            <option value="equals">Bằng</option>
+                            <option value="not_equals">Không bằng</option>
+                            <option value="contains">Chứa</option>
+                            <option value="not_contains">Không chứa</option>
+                            <option value="exists">Có tồn tại</option>
+                            <option value="not_exists">Không tồn tại</option>
+                        </select>
+                    </div>
+                    <div class="form-group col-md-7" id="value-section">
+                        <label>Giá trị</label>
+                        <textarea id="value-input" class="form-control" placeholder="Nhập giá trị..." rows="1"></textarea>
+                    </div>
+                </div>
+            </div>
+
+            <div class="modal-footer">
+                <button id="apply-filter-btn" type="button" class="btn btn-success">Áp Dụng</button>
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Hủy</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+
+<!-- Modal hiển thị chi tiết log -->
+<div class="modal fade" id="detailModal" tabindex="-1" role="dialog" aria-labelledby="detailModalLabel">
     <div class="modal-dialog modal-lg" role="document">
         <div class="modal-content">
             <div class="modal-header">
@@ -35,8 +142,7 @@
                 </button>
             </div>
             <div class="modal-body">
-                <!-- Thay đổi từ <pre> sang <div> -->
-                <div id="logDetail"></div>
+                <pre id="logDetail"></pre>
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-dismiss="modal">Đóng</button>
@@ -47,47 +153,465 @@
 
 @section Scripts {
     <script>
-        // Lấy dữ liệu log từ API và hiển thị lên bảng
+        
+        // khởi tạo select2 khi modal bật
+        $('#filterModal').on('shown.bs.modal', function () {
+            // Kiểm tra nếu Select2 chưa được khởi tạo
+            if (!$('#field-input').hasClass("select2-hidden-accessible")) {
+                $('#field-input').select2({
+                    tags: true,
+                    placeholder: "Nhập hoặc chọn",
+                    allowClear: true,
+                    dropdownParent: $('#filterModal') // Gắn dropdown vào modal
+                });
+            }
+        });
         $(document).ready(function () {
+            var pollingRate = 1000; // Mặc định 1 giây
+            var pollingInterval;
+            var table;
+            var displayedTimestamps = new Set();
+            var isPollingPaused = false; // Biến để theo dõi trạng thái tạm dừng
+
+            // Biến để lưu trữ các bộ lọc
+            var filters = [];
+            var editingFilter = null; // Biến để lưu bộ lọc đang chỉnh sửa
+
             $.ajax({
-                url: 'http://localhost:5178/api/apilog', // Thay {port} bằng số cổng của backend
-                method: 'GET',
-                success: function (data) {
-                    var tbody = $('table tbody');
-                    data.forEach(function (log) {
-                        var row = '<tr>'
-                            + '<td>' + log.timestamp + '</td>'
-                            + '<td>' + log.method + '</td>'
-                            + '<td>' + log.endpoint + '</td>'
-                            + '<td>' + log.statusCode + '</td>'
-                            + '<td><button class="btn btn-info btn-sm" data-toggle="modal" data-target="#detailModal" data-log=\'' + JSON.stringify(log) + '\'>Xem</button></td>'
-                            + '</tr>';
-                        tbody.append(row);
+                url: '/api/logs/fields',
+                type: 'GET',
+                success: function (fields) {
+                    // Populate the Select2 options
+                    var fieldSelect = $("#field-input");
+                    fieldSelect.empty(); // Clear existing options
+
+                    fields.forEach(function (field) {
+                        var option = new Option(field, field, false, false);
+                        fieldSelect.append(option);
                     });
+
+                    // Re-initialize Select2 to refresh options
+                    fieldSelect.trigger('change');
                 },
-                error: function (err) {
-                    console.error(err);
+                error: function (xhr, status, error) {
+                    console.error("Failed to load log fields:", error);
                 }
             });
-        });
 
-        // Xử lý sự kiện hiển thị modal chi tiết log
-        $('#detailModal').on('show.bs.modal', function (event) {
-            var button = $(event.relatedTarget);
-            var log = JSON.parse(button.attr('data-log'));
-            var modal = $(this);
+            // Khởi tạo DataTable
+            function initializeDataTable() {
+                table = $('#logsTable').DataTable({
+                    "processing": false,
+                    "serverSide": false,
+                    "scrollY": "700px", // Chiều cao vùng hiển thị bảng
+                    "scrollCollapse": true,
+                    "ordering": false,
+                    "searching": false, // Tắt chức năng tìm kiếm của DataTable
+                    "pageLength": 25, // Hiển thị 25 dòng trên mỗi trang nếu paging được bật
+                    "paging": false, // bật phân trang
+                    "ajax": {
+                        "url": "/api/logs/search",
+                        "type": "POST",
+                        "contentType": "application/json; charset=utf-8",
 
-            // Sử dụng json-viewer để hiển thị JSON
-            var requestJson = log.request ? log.request : {};
-            var responseJson = log.response ? log.response : {};
+                        // Truyền dữ liệu từ form tìm kiếm và phân trang
+                        // Truyền dữ liệu từ form tìm kiếm và filters
+                        "data": function (d) {
+                            var formData = $('#searchForm').serializeArray();
+                            var searchParams = {};
+                            $.each(formData, function (i, item) {
+                                searchParams[item.name] = item.value;
+                            });
+                            searchParams.Filters = filters;   // Thêm các bộ lọc vào payload
+                            searchParams.From = d.start;
+                            searchParams.Size = d.length;
 
-            var detailHtml = '<h5>Request</h5><div id="requestJson"></div>';
-            detailHtml += '<h5>Response</h5><div id="responseJson"></div>';
-            modal.find('#logDetail').html(detailHtml);
+                            return JSON.stringify(searchParams); // Chuyển thành JSON để gửi
+                        },
 
-            // Hiển thị JSON trong các div
-            $('#requestJson').jsonViewer(requestJson, { collapsed: false, withQuotes: true });
-            $('#responseJson').jsonViewer(responseJson, { collapsed: false, withQuotes: true });
+                        // Xử lý dữ liệu trả về từ server
+                        "dataSrc": function (json) {
+                            json.recordsTotal = json.total.value;
+                            json.recordsFiltered = json.total.value;
+
+                            // Đánh dấu log mới
+                            var logs = json.logs;
+                            logs.forEach(function (log) {
+                                var timestamp = log['@@timestamp'];
+                                if (!displayedTimestamps.has(timestamp)) {
+                                    // Log mới
+                                    log.isNew = true;
+                                    displayedTimestamps.add(timestamp);
+                                } else {
+                                    log.isNew = false;
+                                }
+                            });
+
+                            return logs;
+                        }
+                    },
+
+                    // Cấu hình cột
+                    "columns": [
+                        {
+                            "data": "@@timestamp",
+                            "render": function (data) {
+                                return new Date(data).toLocaleString();
+                            },
+                            "width": "160px"
+                        },
+                        { "data": "level" },
+                        {
+                            "data": 'fields.Method',
+                            "render": function (data, type, row) {
+                                return (data) ? data : '';
+                            }
+                        },
+                        {
+                            "data": "fields.RequestPath",
+                            "render": function (data, type, row) {
+                                var safeData = $('<div>').text(data).html();
+                                return '<div class="line-clamp">' + safeData + '</div>';
+                            }
+                        },
+                        {
+                            "data": "fields.StatusCode",
+                            // Hiển thị màu tùy thuộc vào status code
+                            "render": function (data, type, row) {
+                                if (data) {
+                                    var statusClass = '';
+                                    if (data >= 200 && data < 300) {
+                                        statusClass = 'text-success font-weight-bold';
+                                    } else if (data >= 300 && data < 500) {
+                                        statusClass = 'text-danger font-weight-bold';
+                                    }
+                                    return '<span class="' + statusClass + '">' + data + '</span>';
+                                }
+                                else {
+                                    return '';
+                                }
+                            }
+                        },
+                        {
+                            "data": "message",
+                            "render": function (data, type, row) {
+                                var safeData = $('<div>').text(data).html();
+                                return '<div class="line-clamp">' + safeData + '</div>';
+                            }
+                        }
+                    ],
+
+                    // Cấu hình hiển thị
+                    "createdRow": function (row, data, dataIndex) {
+                        var bgColor = '';
+                        if (data.level) {
+                            switch (data.level.toLowerCase()) {
+                                case 'error':
+                                    bgColor = '#f8d7da'; // Màu nền cho lỗi
+                                    break;
+                                case 'warning':
+                                    bgColor = '#fff3cd'; // Màu nền cho cảnh báo
+                                    break;
+                                case 'debug':
+                                    bgColor = '#ececec'; // Màu nền cho debug
+                                    break;
+                                default:
+                                    bgColor = ''; // Màu nền mặc định
+                                    break;
+                            }
+                        }
+                        
+                        if (data.isNew) {
+                            // Thiết lập màu nền ban đầu là màu xanh
+                            $(row).css('background-color', '#c8e6c9');
+
+                            // Sử dụng setTimeout để thay đổi màu nền về màu đích, kích hoạt transition
+                            setTimeout(function () {
+                                $(row).css('background-color', bgColor);
+                            }, 1);
+                        } else {
+                            // Log không phải mới, thiết lập màu nền trực tiếp
+                            $(row).css('background-color', bgColor);
+                        }
+                    },
+                    "order": [[0, "desc"]], // Sắp xếp theo timestamp giảm dần
+                    "language": {
+                        "url": "//cdn.datatables.net/plug-ins/1.10.24/i18n/Vietnamese.json"
+                    }
+                });
+            }
+
+            initializeDataTable();
+
+            // Sự kiện khi nhấn nút "Tìm kiếm"
+            $('#searchButton').on('click', function () {
+                table.ajax.reload();
+            });
+
+            // Sự kiện thay đổi polling rate
+            $('#pollingRateInput').on('change', function () {
+                var rate = parseInt($(this).val());
+                if (isNaN(rate) || rate <= 0) {
+                    rate = 1;
+                    $(this).val(1);
+                }
+                pollingRate = rate * 1000;
+                clearInterval(pollingInterval);
+                startPolling();
+            });
+
+            // Nút Toggle Pause/Resume
+            $('#togglePollingButton').on('click', function () {
+                if (isPollingPaused) {
+                    // Nếu đang tạm dừng, tiến hành Resume
+                    isPollingPaused = false;
+                    startPolling();
+                    // Thay đổi biểu tượng và nhãn nút thành Pause
+                    $(this)
+                        .removeClass('btn-success')
+                        .addClass('btn-danger')
+                        .html('<i class="fas fa-pause"></i> Pause');
+                } else {
+                    // Nếu đang chạy, tiến hành Pause
+                    if (pollingInterval) {
+                        clearInterval(pollingInterval);
+                        pollingInterval = null;
+                        isPollingPaused = true;
+                        // Thay đổi biểu tượng và nhãn nút thành Resume
+                        $(this)
+                            .removeClass('btn-danger')
+                            .addClass('btn-success')
+                            .html('<i class="fas fa-play"></i> Resume');
+                    }
+                }
+            });
+
+            function startPolling() {
+                pollingInterval = setInterval(function () {
+                    table.ajax.reload(null, false); // Không thay đổi trang hiện tại
+                }, pollingRate);
+            }
+
+            startPolling();
+
+            // Hiển thị chi tiết log trong modal khi click vào dòng
+            $('#logsTable tbody').on('click', 'tr', function () {
+                var data = table.row(this).data();
+                if (data) {
+                    // Hiển thị modal với chi tiết log
+                    $('#detailModal').modal('show');
+
+                    // Sử dụng json-viewer để hiển thị nội dung JSON
+                    $('#logDetail').jsonViewer(data, { collapsed: false, withQuotes: true });
+                }
+            });
+
+            // Khởi tạo Select2 cho trường field-input
+
+            // Khi nhấn nút "Thêm Bộ Lọc"
+            $("#add-filter-btn").click(function () {
+                openFilterModal();
+            });
+
+            // Mở modal thêm/chỉnh sửa bộ lọc
+            function openFilterModal(filter) {
+                if (filter) {
+                    // Chế độ chỉnh sửa
+                    $("#field-input").val(filter.field).trigger('change');
+                    $("#operator-select").val(filter.operator);
+                    if (filter.operator === "exists" || filter.operator === "not_exists") {
+                        $("#value-section").hide();
+                    } else {
+                        $("#value-section").show();
+                        $("#value-input").val(filter.value);
+                    }
+                    editingFilter = filter;
+                } else {
+                    // Chế độ thêm mới
+                    $("#value-section").show();
+                    $("#field-input").val('').trigger('change');
+                    $("#operator-select").val("equals");
+                    $("#value-input").val("");
+                    editingFilter = null;
+                }
+                $("#filterModal").modal("show");
+            }
+
+            // Khi thay đổi toán tử
+            $("#operator-select").change(function () {
+                var operator = $(this).val();
+                if (operator === "exists" || operator === "not_exists") {
+                    $("#value-section").hide();
+                } else {
+                    $("#value-section").show();
+                }
+            });
+
+            // Khi nhấn nút "Áp Dụng"
+            $("#apply-filter-btn").off("click").on("click", function () {
+                var field = $("#field-input").val().trim();
+                var operator = $("#operator-select").val();
+                var value = $("#value-input").val().trim();
+                if (
+                    field &&
+                    operator &&
+                    (operator === "exists" || operator === "not_exists" || value)
+                ) {
+                    if (editingFilter) {
+                        // Chỉnh sửa bộ lọc
+                        editingFilter.field = field;
+                        editingFilter.operator = operator;
+                        if (operator !== "exists" && operator !== "not_exists") {
+                            editingFilter.value = value;
+                        } else {
+                            delete editingFilter.value;
+                        }
+                        updateFilterTag(editingFilter);
+                    } else {
+                        // Thêm bộ lọc mới
+                        var filter = { field: field, operator: operator };
+                        if (operator !== "exists" && operator !== "not_exists") {
+                            filter.value = value;
+                        }
+                        filters.push(filter);
+                        addFilterTag(filter);
+                    }
+                    $("#filterModal").modal("hide");
+                    // Reload dữ liệu với bộ lọc mới
+                    updateFiltersInForm();
+                    displayedTimestamps.clear(); // Xóa danh sách timestamps đã hiển thị
+                    table.ajax.reload();
+                } else {
+                    alert("Vui lòng nhập đầy đủ thông tin bộ lọc.");
+                }
+            });
+
+            // map operator và class của badge
+            var operatorBadgeClass = {
+                equals: "badge-success",
+                not_equals: "badge-danger",
+                contains: "badge-success",
+                not_contains: "badge-danger",
+                exists: "badge-primary",
+                not_exists: "badge-warning",
+            };
+
+            // Thêm tag bộ lọc vào giao diện
+            function addFilterTag(filter) {
+                var operatorText = {
+                    equals: "bằng",
+                    not_equals: "không bằng",
+                    contains: "chứa",
+                    not_contains: "không chứa",
+                    exists: "có tồn tại",
+                    not_exists: "không tồn tại",
+                };
+                var displayText = '<span>' + filter.field + '</span> ' + '<span class="font-weight-light">' + operatorText[filter.operator] + '</span>';
+                if (filter.value !== undefined) {
+                    displayText += " " + filter.value;
+                }
+                var badgeClass = operatorBadgeClass[filter.operator] || 'bg-primary';
+                var $tag = $(
+                    '<span class="badge ' + badgeClass + ' filter-tag m-1">' +
+                    displayText +
+                    ' <i class="fas fa-times" style="cursor:pointer;"></i></span>'
+                );
+                $tag.data("filter", filter); // Lưu trữ bộ lọc trong tag
+                $tag.find(".fa-times").click(function (e) {
+                    e.stopPropagation();
+                    var index = filters.indexOf(filter);
+                    if (index > -1) {
+                        filters.splice(index, 1);
+                        $tag.remove();
+                        // Reload dữ liệu khi xóa bộ lọc
+                        updateFiltersInForm();
+                        displayedTimestamps.clear(); // Xóa danh sách timestamps đã hiển thị
+                        table.ajax.reload();
+                    }
+                });
+                // Khi click vào tag để chỉnh sửa
+                $tag.click(function () {
+                    openFilterModal(filter);
+                });
+                $("#active-filters").append($tag);
+            }
+
+            // Cập nhật tag bộ lọc khi chỉnh sửa
+            function updateFilterTag(filter) {
+                $("#active-filters")
+                    .find(".filter-tag")
+                    .each(function () {
+                        var $tag = $(this);
+                        if ($tag.data("filter") === filter) {
+                            var operatorText = {
+                                equals: "bằng",
+                                not_equals: "không bằng",
+                                contains: "chứa",
+                                not_contains: "không chứa",
+                                exists: "có tồn tại",
+                                not_exists: "không tồn tại",
+                            };
+                            var displayText = '<span>' + filter.field + '</span> ' + '<span class="font-weight-light">' + operatorText[filter.operator] + '</span>';
+                            if (filter.value !== undefined) {
+                                displayText += " " + filter.value;
+                            }
+                            var badgeClass = operatorBadgeClass[filter.operator] || 'bg-primary';
+                            $tag.attr('class', 'badge ' + badgeClass + ' filter-tag m-1'); // Cập nhật class của badge
+                            $tag.html(
+                                displayText +
+                                ' <i class="fas fa-times" style="cursor:pointer;"></i>'
+                            );
+                            // Re-bind lại sự kiện khi xóa tag
+                            $tag.find(".fa-times").click(function (e) {
+                                e.stopPropagation();
+                                var index = filters.indexOf(filter);
+                                if (index > -1) {
+                                    filters.splice(index, 1);
+                                    $tag.remove();
+                                    // Reload dữ liệu khi xóa bộ lọc
+                                    updateFiltersInForm();
+                                    displayedTimestamps.clear(); // Xóa danh sách timestamps đã hiển thị
+                                    table.ajax.reload();
+                                }
+                            });
+                            $tag.off("click").click(function () {
+                                openFilterModal(filter);
+                            });
+                        }
+                    });
+                // Cập nhật filters trong form
+                updateFiltersInForm();
+            }
+
+            // Cập nhật các filters vào form để gửi lên backend
+            function updateFiltersInForm() {
+                $('#filtersContainer').empty();
+                for (var i = 0; i < filters.length; i++) {
+                    var filter = filters[i];
+                    var fieldInput = $('<input>')
+                        .attr('type', 'hidden')
+                        .attr('name', 'Filters[' + i + '].Field')
+                        .val(filter.field);
+                    var operatorInput = $('<input>')
+                        .attr('type', 'hidden')
+                        .attr('name', 'Filters[' + i + '].Operator')
+                        .val(filter.operator);
+                    $('#filtersContainer').append(fieldInput, operatorInput);
+                    if (filter.value !== undefined) {
+                        var valueInput = $('<input>')
+                            .attr('type', 'hidden')
+                            .attr('name', 'Filters[' + i + '].Value')
+                            .val(filter.value);
+                        $('#filtersContainer').append(valueInput);
+                    }
+                }
+            }
+
+            // Khi modal đóng, reset biến editingFilter
+            $("#filterModal").on("hidden.bs.modal", function () {
+                editingFilter = null;
+            });
+
         });
     </script>
 }

@@ -4,10 +4,19 @@ using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.Extensions.Options;
 using MongoDB.Driver;
 using ApiGateway.Middleware;
+using Elastic.Clients.Elasticsearch;
 
 var builder = WebApplication.CreateBuilder(args);
 
+// Cấu hình ElasticsearchClient
+builder.Services.AddSingleton<ElasticsearchClient>(sp =>
+{
+    var settings = new ElasticsearchClientSettings(new Uri("http://localhost:9200"))
+        .DefaultIndex("applogs-stocks-api-development-*"); // Thay đổi theo tên index của bạn
 
+    var client = new ElasticsearchClient(settings);
+    return client;
+});
 
 // Đọc cài đặt MongoDB từ appsettings.json
 builder.Services.Configure<MongoDbSettings>(builder.Configuration.GetSection("MongoDbSettings"));
@@ -84,6 +93,16 @@ app.UseRouting();
 
 // Add the API Key Authentication Middleware
 app.UseMiddleware<ApiKeyAuthenticationMiddleware>();
+
+// Cấu hình middleware
+if (!app.Environment.IsDevelopment())
+{
+    app.UseExceptionHandler("/Home/Error"); // Trang lỗi cho Exception
+    app.UseHsts();
+}
+
+// Thêm middleware xử lý mã trạng thái HTTP
+app.UseStatusCodePagesWithReExecute("/Error/{0}");
 
 // Use authentication and authorization
 app.UseAuthentication();

@@ -165,6 +165,14 @@ namespace ApiGateway.Controllers
             return View();
         }
 
+        // GET: /Admin/DashBoard
+        [HttpGet]
+        public IActionResult DashBoard()
+        {
+            // Hiển thị bảng điều khiển quản trị
+            return View();
+        }
+
 
         // Các action khác như UserList, EditUser, DeleteUser v.v.
     }

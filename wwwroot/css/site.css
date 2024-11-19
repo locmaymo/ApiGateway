@@ -1,4 +1,4 @@
-html {
+﻿html {
   font-size: 14px;
 }
 
@@ -15,3 +15,49 @@ html {
 
 body {
 }
+
+#content-wrapper {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+
+/* Tối ưu bảng hiển thị nhiều nội dung hơn */
+#logsTable tbody td {
+    font-size: 15px;
+    padding: 4px;
+    line-height: 1.2;
+}
+
+/* giới hạn 1 dòng cho logs table*/
+.line-clamp {
+    display: -webkit-box;
+    -webkit-line-clamp: 1; /* Limit to 1 lines */
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/*Custom màu text status code cho logs table*/
+
+.text-custom-success {
+    color: #388e3c;
+}
+
+.text-custom-warning {
+    color: #fbc02d;
+}
+
+.text-custom-danger {
+    color: #d32f2f;
+}
+
+.new-log {
+    animation: fadeNewLog 1s forwards;
+}
+
+/* CSS cho hiệu ứng mờ dần của background-color */
+#logsTable tbody tr {
+    transition: background-color 1s;
+}
+
