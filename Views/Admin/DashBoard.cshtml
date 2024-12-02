@@ -6,6 +6,69 @@
         <a href="#" class="d-none d-sm-inline-block btn btn-sm btn-primary shadow-sm"><i class="fas fa-download fa-sm text-white-50"></i> Generate Report</a>
     </div>
 
+    <h2>Số lượng Log mỗi ngày</h2>
+    <canvas id="logChartDaily" width="800" height="400"></canvas>
+    <script>
+        // Hàm để lấy dữ liệu thống kê từ API
+        async function fetchLogStats(endpoint) {
+            try {
+                const response = await fetch(endpoint);
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
+                }
+                const stats = await response.json();
+                return stats;
+            } catch (error) {
+                console.error('Error fetching log stats:', error);
+                return null;
+            }
+        }
+
+        // Hàm để vẽ biểu đồ
+        async function drawChart(canvasId, endpoint, label) {
+            const stats = await fetchLogStats(endpoint);
+            if (!stats) return;
+
+            const ctx = document.getElementById(canvasId).getContext('2d');
+            new Chart(ctx, {
+                type: 'bar', // Hoặc 'line', 'pie', etc.
+                data: {
+                    labels: stats.labels,
+                    datasets: [{
+                        label: label,
+                        data: stats.data,
+                        backgroundColor: 'rgba(75, 192, 192, 0.2)',
+                        borderColor: 'rgba(75, 192, 192, 1)',
+                        borderWidth: 1,
+                        fill: true,
+                    }]
+                },
+                options: {
+                    scales: {
+                        x: {
+                            title: {
+                                display: true,
+                                text: label === 'Số lượng Log mỗi ngày' ? 'Ngày' : 'Severity',
+                            }
+                        },
+                        y: {
+                            beginAtZero: true,
+                            title: {
+                                display: true,
+                                text: 'Số lượng Log',
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        // Gọi hàm vẽ biểu đồ khi trang tải
+        window.onload = () => {
+            drawChart('logChartDaily', '/stats/daily', 'Số lượng Log mỗi ngày');
+        };
+    </script>
+
     <!-- Content Row -->
     <div class="row">
 

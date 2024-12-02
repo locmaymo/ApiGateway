@@ -6,7 +6,7 @@
     <div class="card-header py-3">
         <form id="searchForm">
             <div class="row d-flex justify-content-between">
-                <div class="col-md-6">
+                <div class="col-md-4">
                     @* Bộ lọc *@
                     <div class="col-md-auto">
                         <button type="button" id="add-filter-btn" class="btn btn-primary btn-sm">
@@ -15,17 +15,35 @@
                     </div>
 
                     <!-- Hiển thị các bộ lọc đang áp dụng -->
-                    <div class="col-md-auto" id="active-filters">
+                    <div class="col-md-auto d-flex flex-wrap" id="active-filters">
                         <!-- Các tag bộ lọc sẽ được chèn vào đây -->
                     </div>
                 </div>
 
-                <div class="col-md-6">
+                <div class="col-md-8">
                     <div class="form-row align-items-end justify-content-end">
+                        <!-- Date Range Fields -->
+                        <div class="col-md-2">
+                            <label for="startDate">Ngày bắt đầu</label>
+                            <input type="text" class="form-control" name="StartDateDisplay" id="startDate" placeholder="Chọn ngày bắt đầu" autocomplete="off" />
+                            <!-- Hidden Input for StartDate Submission -->
+                            <input type="hidden" name="StartDate" id="StartDate" />
+                        </div>
+                        <div class="col-md-2">
+                            <label for="endDate">Ngày kết thúc</label>
+                            <div class="input-group">
+                                <input type="text" class="form-control" name="EndDateDisplay" id="endDate" placeholder="Chọn ngày kết thúc" autocomplete="off" />
+                                <div class="input-group-append">
+                                    <button type="button" id="setNowButton" class="btn btn-success">Now</button>
+                                </div>
+                            </div>
+                            <!-- Hidden Input for EndDate Submission -->
+                            <input type="hidden" name="EndDate" id="EndDate" />
+                        </div>
 
                         @* Ô tìm kiếm *@
-                        <div class="col-md-4">
-                            <label>Từ khóa</label>
+                        <div class="col-md-2">
+                            <label>Từ khóa liên quan</label>
                             <input type="text" class="form-control" name="SearchTerm" placeholder="Tìm kiếm theo từ khóa" />
                         </div>
 
@@ -36,21 +54,22 @@
                         </div>
 
                         @* Ô chọn polling rate *@
-                        <div class="col-md-2">
+                        <div class="col-md-1">
                             <label>Rate (giây)</label>
-                            <input type="number" class="form-control" id="pollingRateInput" min="1" value="1" />
+                            <input type="number" class="form-control" id="pollingRateInput" min="1" value="10" />
                         </div>
 
-                        <div class="d-grid gap-2 d-md-block">
-                            <button type="button" id="searchButton" class="btn btn-primary">
-                                <i class="fas fa-search"></i> Tìm Kiếm
-                            </button>
-                            <button type="button" id="togglePollingButton" class="btn btn-danger">
-                                <i class="fas fa-pause"></i> Pause
-                            </button>
+                        <div class="col-md-2">
+                            <div class="d-grid gap-2 d-md-block">
+                                @* <button type="button" id="searchButton" class="btn btn-primary container-fluid">
+                                    <i class="fas fa-search"></i> Tìm Kiếm
+                                </button> *@
+                                <button type="button" id="togglePollingButton" class="btn btn-danger container-fluid">
+                                    <i class="fas fa-pause"></i> Pause
+                                </button>
+                            </div>
                         </div>
                         
-
                     </div>
                 </div>
             </div>
@@ -142,7 +161,7 @@
                 </button>
             </div>
             <div class="modal-body">
-                <pre id="logDetail"></pre>
+                <div id="logDetail"></div>
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-dismiss="modal">Đóng</button>
@@ -167,15 +186,76 @@
             }
         });
         $(document).ready(function () {
-            var pollingRate = 1000; // Mặc định 1 giây
+            $('[data-toggle="tooltip"]').tooltip();
+
+            var pollingRate = 10000; // Mặc định 1 giây
             var pollingInterval;
             var table;
             var displayedTimestamps = new Set();
-            var isPollingPaused = false; // Biến để theo dõi trạng thái tạm dừng
+            var isRequestInProgress = false; // Variable to track request status
+            var currentRequest = null; // Variable to hold the current AJAX request
+            var pollingInterval = null; // Variable to hold the polling interval
+            var isPollingPaused = false; // Variable to track pause state
 
             // Biến để lưu trữ các bộ lọc
             var filters = [];
             var editingFilter = null; // Biến để lưu bộ lọc đang chỉnh sửa
+
+
+            // Initialize Flatpickr on Start Date input
+            var startDatePicker = flatpickr("#startDate", {
+                enableTime: true,
+                enableSeconds: true,
+                dateFormat: "d-m-Y H:i:S",
+                time_24hr: true,
+                locale: "vi",
+                onChange: function (selectedDates) {
+                    // Set the minimum date of endDate based on startDate
+                    endDatePicker.set('minDate', selectedDates[0] || null);
+
+                    // Update the hidden input
+                    if (selectedDates.length > 0) {
+                        $('#StartDate').val(flatpickr.formatDate(selectedDates[0], "d-m-Y H:i:S"));
+                    } else {
+                        $('#StartDate').val('');
+                    }
+                }
+            });
+
+            // Initialize Flatpickr on End Date input
+            var endDatePicker = flatpickr("#endDate", {
+                enableTime: true,
+                enableSeconds: true,
+                dateFormat: "d-m-Y H:i:S",
+                time_24hr: true,
+                locale: "vi",
+                onChange: function (selectedDates) {
+                    // Set the maximum date of startDate based on endDate
+                    startDatePicker.set('maxDate', selectedDates[0] || null);
+
+                    // Update the hidden input
+                    if (selectedDates.length > 0) {
+                        $('#EndDate').val(flatpickr.formatDate(selectedDates[0], "d-m-Y H:i:S"));
+                    } else {
+                        $('#EndDate').val('');
+                    }
+
+                    // set the now button to default color
+                    document.getElementById('setNowButton').classList.remove('btn-success');
+                }
+            });
+
+            // Event listener for the 'Now' button
+            document.getElementById('setNowButton').addEventListener('click', function () {
+                // just clear the value for Enđate
+                $('#EndDate').val('');
+                endDatePicker.clear();
+
+                // set the now button to success color
+                this.classList.add('btn-success');
+
+            });
+
 
             $.ajax({
                 url: '/api/logs/fields',
@@ -208,7 +288,7 @@
                     "ordering": false,
                     "searching": false, // Tắt chức năng tìm kiếm của DataTable
                     "pageLength": 25, // Hiển thị 25 dòng trên mỗi trang nếu paging được bật
-                    "paging": false, // bật phân trang
+                    "paging": false, // tắt phân trang
                     "ajax": {
                         "url": "/api/logs/search",
                         "type": "POST",
@@ -222,11 +302,17 @@
                             $.each(formData, function (i, item) {
                                 searchParams[item.name] = item.value;
                             });
-                            searchParams.Filters = filters;   // Thêm các bộ lọc vào payload
+                            searchParams.Filters = filters;   // Add filters to the payload
+
+                            // Handle StartDate and EndDate from the hidden inputs
+                            searchParams.StartDate = $('#StartDate').val();
+                            searchParams.EndDate = $('#EndDate').val();
+
+                            // Optionally handle pagination if needed
                             searchParams.From = d.start;
                             searchParams.Size = d.length;
 
-                            return JSON.stringify(searchParams); // Chuyển thành JSON để gửi
+                            return JSON.stringify(searchParams); // Convert to JSON for sending
                         },
 
                         // Xử lý dữ liệu trả về từ server
@@ -248,8 +334,26 @@
                             });
 
                             return logs;
+                        },
+
+                        "beforeSend": function (jqXHR, settings) {
+                            isRequestInProgress = true;
+                            toggleLoadingAnimation(true); // Show loading animation
+                            currentRequest = jqXHR; // Store the jqXHR object
+                        },
+                        "complete": function (jqXHR, textStatus) {
+                            isRequestInProgress = false;
+                            toggleLoadingAnimation(false); // Hide loading animation
+                            currentRequest = null;
+                        },
+                        "error": function (jqXHR, textStatus, errorThrown) {
+                            if (textStatus !== 'abort') {
+                                console.error('AJAX error:', textStatus, errorThrown);
+                            }
                         }
                     },
+
+                    
 
                     // Cấu hình cột
                     "columns": [
@@ -388,23 +492,87 @@
 
             function startPolling() {
                 pollingInterval = setInterval(function () {
-                    table.ajax.reload(null, false); // Không thay đổi trang hiện tại
+                    if (!isRequestInProgress) {
+                        table.ajax.reload(null, false); // Reload data without resetting paging
+                    }
                 }, pollingRate);
             }
 
             startPolling();
 
+            function toggleLoadingAnimation(isLoading) {
+                var $button = $('#togglePollingButton');
+                if (isLoading) {
+                    $button.prop('disabled', false); // Ensure button is enabled
+                    // Add a spinner icon
+                    $button.html('<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Loading...');
+                } else {
+                    // Restore the button text based on the polling state
+                    if (isPollingPaused) {
+                        $button.html('<i class="fas fa-play"></i> Resume');
+                    } else {
+                        $button.html('<i class="fas fa-pause"></i> Pause');
+                    }
+                }
+            }
+
+            // Nút Toggle Pause/Resume
+            // Toggle Pause/Resume Button
+            $('#togglePollingButton').on('click', function () {
+                if (isPollingPaused) {
+                    // Resume Polling
+                    isPollingPaused = false;
+                    startPolling();
+                    // Update button appearance
+                    $(this)
+                        .removeClass('btn-success')
+                        .addClass('btn-danger')
+                        .html('<i class="fas fa-pause"></i> Pause');
+                } else {
+                    // Pause Polling
+                    isPollingPaused = true;
+                    clearInterval(pollingInterval);
+                    pollingInterval = null;
+
+                    // Abort the AJAX request if it's still in progress
+                    if (isRequestInProgress && currentRequest) {
+                        currentRequest.abort();
+                    }
+
+                    // Update button appearance
+                    $(this)
+                        .removeClass('btn-danger')
+                        .addClass('btn-success')
+                        .html('<i class="fas fa-play"></i> Resume');
+                }
+            });
+
             // Hiển thị chi tiết log trong modal khi click vào dòng
             $('#logsTable tbody').on('click', 'tr', function () {
                 var data = table.row(this).data();
                 if (data) {
+                    // Tạo một bản sao của data để không ảnh hưởng đến dữ liệu gốc
+                    var dataCopy = $.extend({}, data); // Hoặc sử dụng Object.assign({}, data)
+                    // Loại bỏ thuộc tính isNew
+                    delete dataCopy.isNew;
                     // Hiển thị modal với chi tiết log
                     $('#detailModal').modal('show');
-
-                    // Sử dụng json-viewer để hiển thị nội dung JSON
-                    $('#logDetail').jsonViewer(data, { collapsed: false, withQuotes: true });
+                    // Xóa nội dung cũ trong logDetail
+                    $('#logDetail').empty();
+                    // Sử dụng @@textea/json-viewer để hiển thị nội dung JSON
+                    new JsonViewer({
+                        value: dataCopy,
+                        indentWidth: 5,
+                        escapeHTML: true,
+                        copyable: false,
+                        // Các tùy chọn khác
+                        theme: 'light', // Hoặc 'dark' nếu bạn muốn giao diện tối
+                        expand: true, // Mở rộng toàn bộ cây JSON
+                        // Cấu hình hiển thị khác nếu cần
+                    }).render('#logDetail');
                 }
             });
+
 
             // Khởi tạo Select2 cho trường field-input
 
@@ -506,21 +674,31 @@
                     exists: "có tồn tại",
                     not_exists: "không tồn tại",
                 };
-                var displayText = '<span>' + filter.field + '</span> ' + '<span class="font-weight-light">' + operatorText[filter.operator] + '</span>';
+                var displayText = '<span>' + filter.field + '</span> ' +
+                    '<span class="font-weight-light">' + operatorText[filter.operator] + '</span>';
                 if (filter.value !== undefined) {
                     displayText += " " + filter.value;
                 }
                 var badgeClass = operatorBadgeClass[filter.operator] || 'bg-primary';
+                var fullText = filter.field + ' ' + operatorText[filter.operator] +
+                    (filter.value !== undefined ? ' ' + filter.value : '');
+
+                // Sử dụng inline-flex để sắp xếp văn bản và icon
                 var $tag = $(
-                    '<span class="badge ' + badgeClass + ' filter-tag m-1">' +
-                    displayText +
-                    ' <i class="fas fa-times" style="cursor:pointer;"></i></span>'
+                    '<span class="badge ' + badgeClass + ' filter-tag m-1" title="' + fullText + '" data-toggle="tooltip">' +
+                    '<span class="filter-text">' + displayText + '</span>' +
+                    ' <i class="fas fa-times remove-filter" style="cursor:pointer;"></i>' +
+                    '</span>'
                 );
                 $tag.data("filter", filter); // Lưu trữ bộ lọc trong tag
-                $tag.find(".fa-times").click(function (e) {
+
+                // Sự kiện xóa tag
+                $tag.find(".remove-filter").click(function (e) {
                     e.stopPropagation();
                     var index = filters.indexOf(filter);
                     if (index > -1) {
+                        // Dispose tooltip trước khi xóa tag
+                        $tag.tooltip('dispose');
                         filters.splice(index, 1);
                         $tag.remove();
                         // Reload dữ liệu khi xóa bộ lọc
@@ -529,11 +707,16 @@
                         table.ajax.reload();
                     }
                 });
+
                 // Khi click vào tag để chỉnh sửa
                 $tag.click(function () {
                     openFilterModal(filter);
                 });
+
                 $("#active-filters").append($tag);
+
+                // Kích hoạt tooltip cho tag mới
+                $tag.tooltip();
             }
 
             // Cập nhật tag bộ lọc khi chỉnh sửa
@@ -551,21 +734,31 @@
                                 exists: "có tồn tại",
                                 not_exists: "không tồn tại",
                             };
-                            var displayText = '<span>' + filter.field + '</span> ' + '<span class="font-weight-light">' + operatorText[filter.operator] + '</span>';
+                            var displayText = '<span>' + filter.field + '</span> ' +
+                                '<span class="font-weight-light">' + operatorText[filter.operator] + '</span>';
                             if (filter.value !== undefined) {
                                 displayText += " " + filter.value;
                             }
                             var badgeClass = operatorBadgeClass[filter.operator] || 'bg-primary';
+                            var fullText = filter.field + ' ' + operatorText[filter.operator] +
+                                (filter.value !== undefined ? ' ' + filter.value : '');
+
+                            // Cập nhật class, title và nội dung HTML với cấu trúc inline-flex
                             $tag.attr('class', 'badge ' + badgeClass + ' filter-tag m-1'); // Cập nhật class của badge
+                            $tag.attr('title', fullText); // Cập nhật title cho tooltip
+                            $tag.attr('data-toggle', 'tooltip'); // Thêm thuộc tính tooltip
                             $tag.html(
-                                displayText +
-                                ' <i class="fas fa-times" style="cursor:pointer;"></i>'
+                                '<span class="filter-text">' + displayText + '</span>' +
+                                ' <i class="fas fa-times remove-filter" style="cursor:pointer;"></i>'
                             );
+
                             // Re-bind lại sự kiện khi xóa tag
-                            $tag.find(".fa-times").click(function (e) {
+                            $tag.find(".remove-filter").click(function (e) {
                                 e.stopPropagation();
                                 var index = filters.indexOf(filter);
                                 if (index > -1) {
+                                    // Dispose tooltip trước khi xóa tag
+                                    $tag.tooltip('dispose');
                                     filters.splice(index, 1);
                                     $tag.remove();
                                     // Reload dữ liệu khi xóa bộ lọc
@@ -574,9 +767,14 @@
                                     table.ajax.reload();
                                 }
                             });
+
+                            // Re-bind sự kiện chỉnh sửa khi click vào tag
                             $tag.off("click").click(function () {
                                 openFilterModal(filter);
                             });
+
+                            // Kích hoạt lại tooltip sau khi cập nhật nội dung
+                            $tag.tooltip('dispose').tooltip();
                         }
                     });
                 // Cập nhật filters trong form

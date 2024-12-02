@@ -61,3 +61,31 @@ body {
     transition: background-color 1s;
 }
 
+/* Giới hạn độ dài của tag và thêm dấu ... khi tràn */
+.filter-tag {
+    display: inline-flex;
+    align-items: center;
+    max-width: 200px; /* Giới hạn chiều rộng tối đa, bạn có thể điều chỉnh */
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    padding-right: 5px; /* Thêm khoảng trống cho icon xóa */
+    box-sizing: border-box; /* Đảm bảo padding được tính trong chiều rộng */
+}
+
+/* Giới hạn độ dài của phần văn bản và thêm dấu ... */
+.filter-text {
+    flex: 1 1 auto;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/* Đảm bảo icon xóa không bị tràn */
+.filter-tag .remove-filter {
+    flex: 0 0 auto;
+    margin-left: 5px; /* Khoảng cách giữa văn bản và icon xóa */
+    cursor: pointer;
+    min-width: 16px; /* Đảm bảo icon luôn hiển thị */
+}
+

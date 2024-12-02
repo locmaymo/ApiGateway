@@ -1,0 +1,28 @@
+﻿@using Newtonsoft.Json
+
+@section Scripts {
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            var message = '@TempData["Notification"]';
+            var notification = message.replace(/&quot;/g, '"');
+
+            if (notification) {
+                var options = JSON.parse(notification);
+
+                Swal.fire({
+                    toast: true,
+                    position: 'top-end',
+                    icon: options.icon,
+                    title: options.title,
+                    showConfirmButton: false,
+                    timer: 3000,
+                    timerProgressBar: true,
+                    didOpen: (toast) => {
+                        toast.addEventListener('mouseenter', Swal.stopTimer)
+                        toast.addEventListener('mouseleave', Swal.resumeTimer)
+                    }
+                });
+            }
+        });
+    </script>
+}

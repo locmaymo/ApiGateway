@@ -44,14 +44,14 @@ namespace ApiGateway.Controllers
             // Kiểm tra xem người dùng có tồn tại không
             if (user == null)
             {
-                ModelState.AddModelError("", "Invalid username.");
+                ModelState.AddModelError("", "Sai tên đăng nhập hoặc mật khẩu.");
                 return View(model);
             }
 
             // So sánh password nhập vào với hash và salt đã lưu
             if (!PasswordHelper.VerifyPassword(model.Password, user.PasswordHash, user.PasswordSalt))
             {
-                ModelState.AddModelError("", "Invalid password.");
+                ModelState.AddModelError("", "Sai tên đăng nhập hoặc mật khẩu.");
                 return View(model);
             }
 

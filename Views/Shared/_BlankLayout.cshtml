@@ -8,6 +8,8 @@
     <link rel="stylesheet" href="~/sbAdmin/css/sb-admin-2.min.css" />
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/GateWay.styles.css" asp-append-version="true" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
+
 </head>
 <body>
     <div id="wrapper">
@@ -28,12 +30,13 @@
             @await Html.PartialAsync("_Footer")
         </div>
     </div>
-
+    @await Html.PartialAsync("_Notifications")
     <script src="~/sbAdmin/vendor/jquery/jquery.min.js"></script>
     <script src="~/sbAdmin/vendor/jquery-easing/jquery.easing.min.js"></script>
     <script src="~/sbAdmin/vendor/bootstrap/js/bootstrap.bundle.min.js"></script>
     <script src="~/sbAdmin/js/sb-admin-2.min.js"></script>
     <script src="~/js/site.js" asp-append-version="true"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     @await RenderSectionAsync("Scripts", required: false)
 </body>
 </html>

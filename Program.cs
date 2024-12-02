@@ -11,8 +11,8 @@ var builder = WebApplication.CreateBuilder(args);
 // Cấu hình ElasticsearchClient
 builder.Services.AddSingleton<ElasticsearchClient>(sp =>
 {
-    var settings = new ElasticsearchClientSettings(new Uri("http://localhost:9200"))
-        .DefaultIndex("applogs-stocks-api-development-*"); // Thay đổi theo tên index của bạn
+    var settings = new ElasticsearchClientSettings(new Uri("http://8.210.61.240:9200/"))
+        .DefaultIndex("applogs-stocks-api-development-2024.11.22"); // Thay đổi theo tên index của bạn
 
     var client = new ElasticsearchClient(settings);
     return client;
