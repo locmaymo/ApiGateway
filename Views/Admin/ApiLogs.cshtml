@@ -464,38 +464,15 @@
                 startPolling();
             });
 
-            // Nút Toggle Pause/Resume
-            $('#togglePollingButton').on('click', function () {
-                if (isPollingPaused) {
-                    // Nếu đang tạm dừng, tiến hành Resume
-                    isPollingPaused = false;
-                    startPolling();
-                    // Thay đổi biểu tượng và nhãn nút thành Pause
-                    $(this)
-                        .removeClass('btn-success')
-                        .addClass('btn-danger')
-                        .html('<i class="fas fa-pause"></i> Pause');
-                } else {
-                    // Nếu đang chạy, tiến hành Pause
-                    if (pollingInterval) {
-                        clearInterval(pollingInterval);
-                        pollingInterval = null;
-                        isPollingPaused = true;
-                        // Thay đổi biểu tượng và nhãn nút thành Resume
-                        $(this)
-                            .removeClass('btn-danger')
-                            .addClass('btn-success')
-                            .html('<i class="fas fa-play"></i> Resume');
-                    }
-                }
-            });
 
             function startPolling() {
-                pollingInterval = setInterval(function () {
-                    if (!isRequestInProgress) {
-                        table.ajax.reload(null, false); // Reload data without resetting paging
-                    }
-                }, pollingRate);
+                if (!isPollingPaused) {
+                    pollingInterval = setInterval(function () {
+                        if (!isRequestInProgress) {
+                            table.ajax.reload(null, false); // Reload data without resetting paging
+                        }
+                    }, pollingRate);
+                }
             }
 
             startPolling();
@@ -519,20 +496,12 @@
             // Nút Toggle Pause/Resume
             // Toggle Pause/Resume Button
             $('#togglePollingButton').on('click', function () {
-                if (isPollingPaused) {
-                    // Resume Polling
-                    isPollingPaused = false;
-                    startPolling();
-                    // Update button appearance
-                    $(this)
-                        .removeClass('btn-success')
-                        .addClass('btn-danger')
-                        .html('<i class="fas fa-pause"></i> Pause');
-                } else {
+                if (!isPollingPaused) {
                     // Pause Polling
                     isPollingPaused = true;
                     clearInterval(pollingInterval);
                     pollingInterval = null;
+                    console.log('Polling paused');
 
                     // Abort the AJAX request if it's still in progress
                     if (isRequestInProgress && currentRequest) {
@@ -544,6 +513,17 @@
                         .removeClass('btn-danger')
                         .addClass('btn-success')
                         .html('<i class="fas fa-play"></i> Resume');
+                    console.log("update btutt")
+                    
+                } else {
+                    // Resume Polling
+                    isPollingPaused = false;
+                    startPolling();
+                    // Update button appearance
+                    $(this)
+                        .removeClass('btn-success')
+                        .addClass('btn-danger')
+                        .html('<i class="fas fa-pause"></i> Pause');
                 }
             });
 
