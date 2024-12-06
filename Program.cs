@@ -12,7 +12,7 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddSingleton<ElasticsearchClient>(sp =>
 {
     var settings = new ElasticsearchClientSettings(new Uri("http://8.210.61.240:9200/"))
-        .DefaultIndex("applogs-stocks-api-development-2024.11.22"); // Thay đổi theo tên index của bạn
+        .DefaultIndex("application-logs-emails-api-development-*"); // Thay đổi theo tên index của bạn
 
     var client = new ElasticsearchClient(settings);
     return client;
@@ -28,11 +28,6 @@ builder.Services.AddSingleton<IMongoClient>(s =>
     return new MongoClient(settings.ConnectionString);
 });
 
-// Load RabbitMQ settings from configuration
-builder.Services.Configure<RabbitMQSettings>(builder.Configuration.GetSection("RabbitMQSettings"));
-
-// Register the RabbitMQPublisherService
-builder.Services.AddSingleton<RabbitMQPublisherService>();
 
 // ...
 builder.Services.AddScoped<UserService>();

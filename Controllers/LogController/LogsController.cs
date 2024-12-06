@@ -4,9 +4,11 @@ using Elastic.Clients.Elasticsearch.Aggregations;
 using Elastic.Clients.Elasticsearch.IndexManagement;
 using Elastic.Clients.Elasticsearch.Mapping;
 using Elastic.Clients.Elasticsearch.QueryDsl;
+using Elastic.Clients.Elasticsearch.Requests;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.VisualBasic;
 using System.Globalization;
+using System.Text.Json;
 
 namespace ApiGateway.Controllers
 {
@@ -14,23 +16,24 @@ namespace ApiGateway.Controllers
     {
         private readonly ElasticsearchClient _elasticClient;
 
-        public LogsController(ElasticsearchClient elasticClient)
+        public LogsController(ElasticsearchClient elasticClient, ILogger<LogsController> logger)
         {
             _elasticClient = elasticClient;
-        }
+        }   
 
         public IActionResult Index()
         {
             return View();
         }
 
+        // GET: /Logs/Fields get all fields in the index
         [HttpGet("api/logs/fields")]
         public async Task<IActionResult> GetLogFields()
         {
             try
             {
                 // Replace "your-index-name" with the actual name of your index
-                var response = await _elasticClient.Indices.GetMappingAsync(new GetMappingRequest("applogs-stocks-api"));
+                var response = await _elasticClient.Indices.GetMappingAsync(new GetMappingRequest("application-logs-emails-api-development-*"));
 
                 if (!response.IsValidResponse || !response.Indices.Any())
                 {
@@ -78,6 +81,7 @@ namespace ApiGateway.Controllers
             return fields;
         }
 
+        // POST: /Logs/Search get all log the index
         [HttpPost("api/logs/search")]
         public async Task<IActionResult> SearchLogs([FromBody] LogSearchRequest request)
         {
@@ -227,7 +231,101 @@ namespace ApiGateway.Controllers
 
         }
 
-        [HttpGet("stats/daily")]
+        // get log by user id param
+        [HttpGet("api/logs")]
+        public async Task<IActionResult> GetLogs(
+            [FromQuery] int? userid,
+            [FromQuery] string key,
+            [FromQuery] int size = 100,
+            [FromQuery(Name = "startTime")] string startTime = null,
+            [FromQuery(Name = "endTime")] string endTime = null)
+        {
+            try
+            {
+                var mustQueries = new List<Query>();
+
+                // Lọc theo UserId nếu được cung cấp
+                if (userid.HasValue)
+                {
+                    mustQueries.Add(new TermQuery("fields.UserId")
+                    {
+                        Value = userid.Value
+                    });
+                }
+
+                // Nếu 'key' được cung cấp, chỉ lọc trên 'fields.LogType.raw'
+                if (!string.IsNullOrEmpty(key))
+                {
+                    mustQueries.Add(new TermQuery("fields.LogType.raw")
+                    {
+                        Value = key
+                    });
+                }
+
+                // Lọc theo khoảng thời gian
+                if (!string.IsNullOrEmpty(startTime) || !string.IsNullOrEmpty(endTime))
+                {
+                    var dateRangeQuery = new DateRangeQuery("@timestamp");
+
+                    // Định dạng thời gian, ví dụ: "yyyy-MM-ddTHH:mm:ss"
+                    var format = "yyyy-MM-ddTHH:mm:ss";
+                    var culture = CultureInfo.InvariantCulture;
+
+                    if (DateTime.TryParseExact(startTime, format, culture, DateTimeStyles.None, out var startDate))
+                    {
+                        dateRangeQuery.Gte = startDate;
+                    }
+
+                    if (DateTime.TryParseExact(endTime, format, culture, DateTimeStyles.None, out var endDate))
+                    {
+                        dateRangeQuery.Lte = endDate;
+                    }
+                    mustQueries.Add(dateRangeQuery);
+                }
+
+                var searchRequest = new SearchRequest<LogEvent>("application-logs-emails-api-development-*")
+                {
+                    Query = new BoolQuery
+                    {
+                        Must = mustQueries.ToArray()
+                    },
+                    Sort = new[]
+                    {
+                        SortOptions.Field("@timestamp", new FieldSort
+                        {
+                            Order = SortOrder.Desc
+                        })
+                    },
+
+                    Size = size,
+                    From = 0 // Bạn có thể thêm tham số `From` nếu cần phân trang
+                };
+
+               
+                var response = await _elasticClient.SearchAsync<LogEvent>(searchRequest);
+
+                if (!response.IsValidResponse)
+                {
+                    return StatusCode(500, response.ElasticsearchServerError?.Error?.Reason ?? "Unknown error");
+                }
+
+                var result = new
+                {
+                    total = response.Total,
+                    logs = response.Documents
+                };
+
+                return Ok(result);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, ex.Message);
+            }
+        }
+    
+
+
+    [HttpGet("stats/daily")]
         public async Task<IActionResult> GetDailyLogStats()
         {
             try
